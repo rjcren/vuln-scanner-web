@@ -29,17 +29,17 @@ request.interceptors.request.use(config => {
     return Promise.reject(error);
 });
 
-request.interceptors.response.use(response => {
-    let res = response;
+request.interceptors.response.use(res => {
     if (typeof res === 'string') {
         res = res ? JSON.parse(res) : res;
     }
     return res;
 }, error => {
+    console.log(error);
     if (!error.response) ElMessage.error('无法连接服务器，请检查网络或联系管理员');
     else if (error.response.status === 404) ElMessage.error('未找到请求接口！');
     else if (error.response.status === 401) {
-        ElMessage.error(error.response.data.error.message+'2秒后返回登录页面');
+        ElMessage.error(error.response.data.error.message+'，2秒后返回登录页面');
         logout();
     } else if (error.response.status)ElMessage.error(error.response.data.error.message);
     return Promise.reject(error);

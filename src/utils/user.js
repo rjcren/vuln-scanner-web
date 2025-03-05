@@ -32,10 +32,11 @@ export const logout = () => {
     // 清除本地存储
     localStorage.removeItem('jwt_token');
     localStorage.removeItem('token_expiration');
+    localStorage.removeItem('routeTabs')
 
     // 清除axios默认授权头
     delete request.defaults.headers.common['Authorization'];
 
     // 提示并跳转
-    setTimeout( () => { location.replace('/login'); }, 2000)
+    setTimeout( () => { location.replace('/login'); }, 1000)
 }
