@@ -16,7 +16,7 @@
                     <div class="info-item">
                         <span class="label">扫描状态：</span>
                         <el-tag :type="statusMap[data.status]?.[0] || 'info'">{{ statusMap[data.status]?.[1] || '未知'
-                            }}</el-tag>
+                        }}</el-tag>
                     </div>
                     <div class="info-item">
                         <span class="label">目标URL：</span>
@@ -43,64 +43,74 @@
                 </div>
             </div>
         </el-card>
-        <!-- 日志时间线 -->
-        <el-card class="log-section">
-            <template #header>
-                <span class="log-title">任务日志</span>
-            </template>
-            <el-timeline v-if="data.task_logs.length">
-                <el-timeline-item v-for="(log, index) in data.task_logs" :key="index"
-                    :timestamp="formatTime(log.timestamp)" placement="top">
-                    <span :style="{ color: statusMap[log.log_level] }">{{ log.log_message }}</span>
-                </el-timeline-item>
-            </el-timeline>
-            <el-empty v-else description="暂无日志记录" />
-        </el-card>
+        <div class="log-vuln-container">
+            <!-- 日志时间线 -->
+            <el-card class="log-section">
+                <template #header>
+                    <span class="log-title">任务日志</span>
+                </template>
+                <el-timeline v-if="data.task_logs.length">
+                    <el-timeline-item v-for="(log, index) in data.task_logs" :key="index"
+                        :timestamp="formatTime(log.timestamp)" placement="top">
+                        <span :style="{ color: statusMap[log.log_level] }">{{ log.log_message }}</span>
+                    </el-timeline-item>
+                </el-timeline>
+                <el-empty v-else description="暂无日志记录" />
+            </el-card>
 
-        <el-card class="vuln-section">
-            <template #header>
-                <div class="section-header">
-                    <span class="section-title">漏洞清单</span>
-                    <el-tag type="danger">共 {{ data.vulnerabilities.length }} 个漏洞</el-tag>
-                </div>
-            </template>
+            <el-card class="vuln-section">
+                <template #header>
+                    <div class="section-header">
+                        <span class="section-title">漏洞清单</span>
+                        <el-tag type="danger">共 {{ data.vulnerabilities.length }} 个漏洞</el-tag>
+                    </div>
+                </template>
 
-            <el-table :data="data.vulnerabilities" stripe empty-text="未发现漏洞" style="width: 100%">
-                <el-table-column prop="cve_id" label="CVE ID" width="140">
-                    <template #default="{ row }">
-                        <el-link v-if="row.cve_id" type="primary"
-                            :href="`https://nvd.nist.gov/vuln/detail/${row.cve_id}`" target="_blank">
-                            {{ row.cve_id }}
-                        </el-link>
-                        <span v-else>-</span>
-                    </template>
-                </el-table-column>
+                <el-table :data="data.vulnerabilities" stripe empty-text="未发现漏洞" style="width: 100%">
+                    <el-table-column prop="cve_id" label="CVE ID" width="140">
+                        <template #default="{ row }">
+                            <el-link v-if="row.cve_id" type="primary"
+                                :href="`https://nvd.nist.gov/vuln/detail/${row.cve_id}`" target="_blank">
+                                {{ row.cve_id }}
+                            </el-link>
+                            <span v-else>-</span>
+                        </template>
+                    </el-table-column>
 
-                <el-table-column prop="severity" label="严重等级" width="120">
-                    <template #default="{ row }">
-                        <el-tag :type="severityColor(row.severity)" effect="dark">
-                            {{ row.severity.toUpperCase() }}
-                        </el-tag>
-                    </template>
-                </el-table-column>
+                    <el-table-column prop="severity" label="严重等级" width="100">
+                        <template #default="{ row }">
+                            <el-tag :type="severityColor(row.severity)" effect="dark">
+                                {{ row.severity.toUpperCase() }}
+                            </el-tag>
+                        </template>
+                    </el-table-column>
 
-                <el-table-column prop="description" label="漏洞描述">
-                    <template #default="{ row }">
-                        <div class="description-wrapper">
-                            {{ truncateDescription(row.description) }}
-                        </div>
-                    </template>
-                </el-table-column>
+                    <el-table-column prop="severity" label="漏洞来源" width="120">
+                        <template #default="{ row }">
+                            <el-tag :type="'info'">
+                                {{ row.scan_source.toUpperCase() }}
+                            </el-tag>
+                        </template>
+                    </el-table-column>
 
-                <el-table-column label="操作" width="120">
-                    <template #default="{ row }">
-                        <el-button size="small" @click="showDetail(row)">
-                            详情
-                        </el-button>
-                    </template>
-                </el-table-column>
-            </el-table>
-        </el-card>
+                    <el-table-column prop="description" label="漏洞描述">
+                        <template #default="{ row }">
+                            <div class="description-wrapper">
+                                {{ truncateDescription(row.description) }}
+                            </div>
+                        </template>
+                    </el-table-column>
+
+                    <el-table-column label="操作" width="120">
+                        <template #default="{ row }">
+                            <el-button size="small" @click="showDetail(row)">
+                                详情
+                            </el-button>
+                        </template>
+                    </el-table-column>
+                </el-table>
+            </el-card>
+        </div>
     </div>
 </template>
 
@@ -108,7 +118,6 @@
 import { reactive, onMounted, ref, computed } from "vue";
 import { Search } from "@element-plus/icons-vue";
 import request from "@/utils/request";
-import { parsejwt } from "@/utils/user";
 import { ElMessage, ElMessageBox } from "element-plus";
 import router from "@/router";
 import { useRoute } from "vue-router";
@@ -130,10 +139,8 @@ const loadTaskDetail = async () => {
     try {
         const id = useRoute().params.id;
         const res = await request.get(`/tasks/${id}`);
-        console.log(res);
         Object.assign(data, res.data)
     } catch (error) {
-        console.log('获取任务详情失败', error)
         ElMessage.error('获取任务详情失败')
     }
 }
@@ -183,11 +190,12 @@ const truncateDescription = (desc) => {
 const showDetail = (vuln) => {
     ElMessageBox.alert(
         `<div class="vuln-detail">
-      <h3>${vuln.cve_id || '未知漏洞'}</h3>
-      <p><strong>严重等级：</strong><el-tag type="${severityColor(vuln.severity)}">${vuln.severity}</el-tag></p>
-      <p><strong>详细描述：</strong>${vuln.description || '无'}</p>
-      <p><strong>解决方案：</strong>${vuln.solution || '暂无解决方案'}</p>
-    </div>`,
+            <h3>${vuln.cve_id || '未知漏洞'}</h3>
+            <p><strong>严重等级：</strong><el-tag type="${severityColor(vuln.severity)}">${vuln.severity}</el-tag></p>
+            <p><strong>漏洞来源：</strong>${vuln.scan_source || '未知'}</p>
+            <p><strong>详细描述：</strong>${vuln.description || '无'}</p>
+            <p><strong>解决方案：</strong>${vuln.solution || '暂无解决方案'}</p>
+        </div>`,
         {
             title: '漏洞详情',
             dangerouslyUseHTMLString: true,
@@ -221,7 +229,7 @@ onMounted(() => {
 .grid-container {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 30px;
+    gap: 10px;
 }
 
 .info-item {
@@ -238,6 +246,26 @@ onMounted(() => {
 
 .detail-section {
     margin: 20px 0;
+}
+
+.log-vuln-container {
+    display: grid;
+    grid-template-columns: 1fr 5fr;
+    /* 左右宽度1:5 */
+    gap: 20px;
+    margin-top: 30px;
+}
+
+.el-timeline {
+    max-height: 600px;
+    overflow-y: auto;
+}
+
+.log-section,
+.vuln-section {
+    margin-top: 0 !important;
+    min-height: 300px;
+    overflow-y: auto;
 }
 
 .log-section {

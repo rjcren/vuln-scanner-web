@@ -42,7 +42,7 @@
                 <el-card>
                     <template #header>
                         <div class="clearfix">
-                            <span>基本资料</span>
+                            <span>修改信息</span>
                         </div>
                     </template>
                     <el-tabs v-model="activeTab">
@@ -50,9 +50,6 @@
                             <el-form ref="userRef" :model="account" :rules="account_rules" label-width="80px">
                                 <el-form-item label="用户昵称" prop="username">
                                     <el-input v-model="account.username" maxlength="30" />
-                                </el-form-item>
-                                <el-form-item label="邮箱" prop="email">
-                                    <el-input v-model="account.email" maxlength="50" />
                                 </el-form-item>
                                 <el-form-item>
                                     <el-button type="primary" @click="handleAccountSubmit">保存</el-button>
@@ -166,8 +163,7 @@ const handleAccountSubmit = async () => {
         return
     }
     await request.post('/auth/change-account', {
-        username: account.username,
-        email: account.email
+        username: account.username
     })
     ElMessage.success('个人信息更新成功')
     getAccount()

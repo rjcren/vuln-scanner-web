@@ -55,25 +55,21 @@ const rules = {
 };
 
 const login = async () => {
-    try {
-        await loginFormRef.value.validate();
-    } catch (error) {
-        ElMessage.error(error);
+    const isValid = await loginFormRef.value.validate();
+    if (!isValid) {
+        ElMessage.error("请正确填写表单信息");
+        return;
     }
     loginForm.value.email = loginForm.value.email.trim();
     loginForm.value.password = loginForm.value.password.trim();
     request.post('/auth/login', loginForm.value).then(response => {
         const res = response.data;
         if (response.status === 200) {
-            const token = res.token;
-            const expires_in = res.expires_in;
-            localStorage.setItem('jwt_token', token);
-            localStorage.setItem('token_expiration', Date.now() + expires_in * 1000);
-            request.defaults.headers.common['Authorization'] = `Bearer ${token}`;
             ElMessage.success(res.message + '，2秒后自动跳转首页');
             setTimeout(() => { location.href = '/manager/home'; }, 2000);
         } else {
             ElMessage.error(res.error.message);
+            return;
         }
     })
 };

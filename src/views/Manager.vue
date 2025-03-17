@@ -21,19 +21,6 @@
             <el-icon><icon-menu /></el-icon>
             <span>首页</span>
           </el-menu-item>
-          <el-sub-menu index="manager">
-            <template #title>
-              <el-icon>
-                <location />
-              </el-icon>
-              <span>信息收集</span>
-            </template>
-            <el-menu-item index="">
-              <el-icon>
-                <list />
-              </el-icon>任务列表
-            </el-menu-item>
-          </el-sub-menu>
           <el-sub-menu index="scanner">
             <template #title>
               <el-icon>
@@ -53,22 +40,20 @@
             </el-menu-item>
           </el-sub-menu>
 
+          <el-menu-item index="/manager/users-list">
+            <el-icon><Discount /></el-icon>用户管理
+          </el-menu-item>
+
           <el-sub-menu index="account">
             <template #title>
-              <el-icon>
-                <location />
-              </el-icon>
+              <el-icon><User /></el-icon>
               <span>账号管理</span>
             </template>
             <el-menu-item index="/manager/account">
-              <el-icon>
-                <list />
-              </el-icon>账号信息
+              <el-icon><Comment /></el-icon>账号信息
             </el-menu-item>
             <el-menu-item index="" @click="logOut">
-              <el-icon>
-                <Management />
-              </el-icon>退出登录
+              <el-icon><CircleClose /></el-icon>退出登录
             </el-menu-item>
           </el-sub-menu>
         </el-menu>
@@ -101,7 +86,7 @@
 import { ref, onMounted, watch, provide } from "vue";
 import router from "@/router/index.js";
 import { Menu as IconMenu } from '@element-plus/icons-vue';
-import { checkLogin, parsejwt, logout } from "@/utils/user.js";
+import { logout, fetchCurrentUser, checkLogin } from "@/utils/user.js";
 import { ElMessage } from "element-plus";
 import { useRoute } from "vue-router";
 
@@ -109,8 +94,7 @@ const userName = ref('');
 const role = ref('');
 
 onMounted(async () => {
-  // 登录验证
-  if (!checkLogin()) return
+  checkLogin()
   if (tabs.value.length === 0) addTab('/manager/home')
 
   // 设置首页路由
@@ -119,12 +103,11 @@ onMounted(async () => {
 
   // 获取用户信息逻辑
   try {
-    const res = parsejwt(localStorage.getItem('jwt_token'))
+    const res = await fetchCurrentUser();
     userName.value = res.username
     role.value = res.role === 'admin' ? '管理员' : '普通用户'
 
   } catch (error) {
-    console.error('获取用户信息失败:', error)
     ElMessage.error('获取用户信息失败')
     userName.value = '用户'
   }
@@ -254,9 +237,9 @@ provide('addTab', addTab)
   flex: 1;
   padding:  10px 20px;
   width: 0;
-  margin-left: 200px; /* 导航宽度 */
+  margin-left: 200px;
   height: 100%;
-  overflow: hidden; /* 禁止主体区域滚动 */
+  overflow: auto;
 }
 
 .tags-container {

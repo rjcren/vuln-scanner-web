@@ -11,7 +11,7 @@
             <el-button type="warning" @click="handleBatchDelete">批量删除</el-button>
         </div>
         <div class="card">
-            <el-table :data="data.tableData" stripe style="width: 100%;" @selection-change="handleSelectionChange">
+            <el-table :data="data.tableData" stripe style="width: 100%;" @selection-change="handleSelectionChange" row-key="task_id">
                 <el-table-column type="selection" width="55" />
                 <el-table-column v-if="role" prop="username" label="创建用户" width="120" />
                 <el-table-column prop="task_name" label="任务名" width="120" />
@@ -71,7 +71,7 @@
 import { reactive, onMounted, ref, inject } from "vue";
 import { Search } from "@element-plus/icons-vue";
 import request from "@/utils/request";
-import { parsejwt } from "@/utils/user";
+import { fetchCurrentUser } from "@/utils/user";
 import { ElMessage, ElMessageBox } from "element-plus";
 
 const addTab = inject('addTab')
@@ -219,13 +219,12 @@ const handleBatchDelete = () => {
 
 const role = ref(false)
 // 初始化加载
-onMounted(() => {
+onMounted( async () =>  {
     loadTasks()
     try {
-        const res = parsejwt(localStorage.getItem('jwt_token'))
+        const res = await fetchCurrentUser()
         role.value = res.role === 'admin'
     } catch (error) {
-        console.error('获取用户信息失败:', error)
         ElMessage.error('获取用户信息失败')
     }
 })
