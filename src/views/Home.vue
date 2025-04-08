@@ -198,7 +198,8 @@ const initCharts = () => {
       { value: severityData.critical, name: '严重' },
       { value: severityData.high, name: '高危' },
       { value: severityData.medium, name: '中危' },
-      { value: severityData.low, name: '低危' }
+      { value: severityData.low, name: '低危' },
+      { value: severityData.info, name: '信息性' }
     ]))
 
     // 进行中任务默认值

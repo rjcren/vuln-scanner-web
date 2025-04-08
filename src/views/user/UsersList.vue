@@ -18,12 +18,12 @@
         <el-table class="card" :data="userList" stripe style="width: 100%">
             <el-table-column prop="email" label="邮箱" width="400" />
             <el-table-column prop="username" label="用户名" width="170" />
-            <el-table-column prop="role" label="角色" width="120">
+            <el-table-column prop="role" label="角色" width="120" sortable>
                 <template #default="scope">
                     {{ scope.row.role === 'admin' ? '管理员' : '普通用户' }}
                 </template>
             </el-table-column>
-            <el-table-column prop="created_at" label="注册时间" width="200" />
+            <el-table-column prop="created_at" label="注册时间" width="200" sortable />
             <el-table-column label="操作">
                 <template #default="scope">
                     <el-button type="success" size="small" @click="handleEdit(scope.row)">

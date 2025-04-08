@@ -15,7 +15,7 @@ const showLoading = (config) => {
         if (loadingRequestCount === 0)
             ElMessage.warning('请求处理中...');
         loadingRequestCount++;
-    }, 3000);
+    }, 2000);
 };
 
 const clearLoading = (config) => {
@@ -24,10 +24,18 @@ const clearLoading = (config) => {
         loadingRequestCount--;
 }
 
+const getCookie = (name) => {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop().split(';').shift();
+    return null;
+};
+
 // request拦截器
 request.interceptors.request.use(config => {
     showLoading(config);
-    config.headers['Content-Type'] = 'application/json;charset=UTF-8'
+    config.headers['Content-Type'] = 'application/json;charset=UTF-8';
+    config.headers['X-CSRF-Token'] = getCookie('csrf_token');
     return config;
 }, error => {
     clearLoading(error.config);
@@ -47,8 +55,10 @@ request.interceptors.response.use(res => {
     else if (error.response.status === 401) {
         ElMessage.error(error.response.data.error.message + '，2秒后返回登录页面');
         logout();
-    } else if (error.response.status) ElMessage.error(error.response.data.error.message);
-    else ElMessage.error(error.response.data?.error?.message || '服务器错误');
+    } else {
+        ElMessage.error(error.response.data?.error?.message || '服务器错误');
+        console.log(error.response.data.error?.message);
+    }
     return Promise.reject(error);
 });
 

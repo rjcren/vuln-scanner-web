@@ -66,7 +66,7 @@ const login = async () => {
         const res = response.data;
         if (response.status === 200) {
             ElMessage.success(res.message + '，2秒后自动跳转首页');
-            setTimeout(() => { location.href = '/manager/home'; }, 2000);
+            setTimeout(() => { router.push('/manager/home'); }, 2000);
         } else {
             ElMessage.error(res.error.message);
             return;

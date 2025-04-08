@@ -11,5 +11,5 @@
 </template>
 
 <script setup>
-    import router from '../router/index.js'
+    import router from '../../router/index.js'
 </script>

@@ -19,8 +19,9 @@
           class="el-menu-vertical-demo" :default-openeds="['manager', 'scanner', 'account']">
           <el-menu-item index="home">
             <el-icon><icon-menu /></el-icon>
-            <span>首页</span>
+            <span>仪表盘</span>
           </el-menu-item>
+
           <el-sub-menu index="scanner">
             <template #title>
               <el-icon>
@@ -38,9 +39,17 @@
                 <Management />
               </el-icon>漏洞列表
             </el-menu-item>
+            <el-menu-item index="/manager/report-list">
+              <el-icon>
+                <el-icon><Tickets /></el-icon>
+              </el-icon>报告列表
+            </el-menu-item>
+            <el-menu-item v-if="role === '管理员'" index="/manager/feedback-list">
+              <el-icon><ChatDotRound /></el-icon>用户反馈列表
+            </el-menu-item>
           </el-sub-menu>
 
-          <el-menu-item index="/manager/users-list">
+          <el-menu-item v-if="role === '管理员'" index="/manager/users-list">
             <el-icon><Discount /></el-icon>用户管理
           </el-menu-item>
 
@@ -67,11 +76,7 @@
           </el-tabs>
         </div>
         <!-- 路由视图 -->
-        <router-view v-slot="{ Component }">
-          <keep-alive>
-            <component :is="Component" />
-          </keep-alive>
-        </router-view>
+        <router-view />
       </div>
     </div>
     <!-- 底部版权信息 -->

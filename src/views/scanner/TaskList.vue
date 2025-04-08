@@ -1,7 +1,7 @@
 <template>
     <div style="width: 100%;">
         <div class="card">
-            <el-input style="width: 240px; margin-right: 10px;" v-model="data.keyword" placeholder="请输入搜索内容" clearable
+            <el-input style="width: 240px; margin-right: 10px;" v-model="data.keyword" placeholder="可搜索任务名、创建用户、目标URL、扫描类型、状态" clearable
                 prefix-icon="Search" />
             <el-button type="primary" @click="handleSearch">查询</el-button>
             <el-button type="warning" @click="handleReset">重置</el-button>
@@ -12,12 +12,12 @@
         </div>
         <div class="card">
             <el-table :data="data.tableData" stripe style="width: 100%;" @selection-change="handleSelectionChange" row-key="task_id">
-                <el-table-column type="selection" width="55" />
-                <el-table-column v-if="role" prop="username" label="创建用户" width="120" />
-                <el-table-column prop="task_name" label="任务名" width="120" />
+                <el-table-column type="selection" width="50" />
+                <el-table-column v-if="role" prop="username" label="创建用户" width="100" align="center" />
+                <el-table-column prop="task_name" label="任务名" width="220" />
                 <el-table-column prop="target_url" label="URL" width="300" />
-                <el-table-column prop="scan_type" label="扫描类型" width="100" />
-                <el-table-column prop="status" label="状态" width="100">
+                <el-table-column prop="scan_type" label="扫描类型" width="110" align="center" />
+                <el-table-column prop="status" label="状态" width="130" align="center">
                     <template #default="scope">
                         <el-tag :type="statusMap[scope.row.status][0]" style="min-width: 60px;" disable-transitions>{{
                             statusMap[scope.row.status][1] }}</el-tag>
@@ -25,10 +25,12 @@
                 </el-table-column>
                 <el-table-column prop="created_at" label="创建时间" width="200" />
                 <el-table-column prop="finished_at" label="完成时间" width="200" />
-                <el-table-column fixed="right" label="操作" min-width="120">
+                <el-table-column fixed="right" label="操作" min-width="120" align="center">
                     <template #default="scope">
-                        <el-button link :disabled="['running', 'completed'].includes(scope.row.status)" type="warning" size="small"
+                        <el-button link :disabled="['running', 'completed'].includes(scope.row.status)" type="success" size="small"
                             @click="startScan(scope.row.task_id)">开始扫描</el-button>
+                        <el-button link :disabled="scope.row.status !== 'running'" type="warning" size="small"
+                            @click="stopScan(scope.row.task_id)">停止扫描</el-button>
                         <el-button link type="primary" size="small"
                             @click="findMore(scope.row.task_id)">查看详情</el-button>
                         <el-button link :disabled="scope.row.status === 'running'" type="danger" size="small"
@@ -52,11 +54,28 @@
                     <el-input v-model="form.target_url" placeholder="请输入目标URL" />
                 </el-form-item>
                 <el-form-item label="扫描类型">
-                    <el-select v-model="form.scan_type" placeholder="请选择">
-                        <el-option label="快速扫描" value="quick" />
-                        <el-option label="全盘扫描" value="full" />
+                <el-select v-model="form.scan_type" placeholder="请选择">
+                        <el-option label="全扫描" value="full" />
+                        <el-option label="SQL注入" value="sql" />
+                        <el-option label="跨站脚本" value="xss" />
+                        <el-option label="弱口令" value="pass" />
                     </el-select>
                 </el-form-item>
+
+                <el-form-item label="自动登录">
+                    <el-switch v-model="form.auto_login" />
+                </el-form-item>
+                <div v-if="form.auto_login">
+                    <el-form-item label="登录地址" required>
+                        <el-input v-model="form.login_url" placeholder="请输入登录页面URL" />
+                    </el-form-item>
+                    <el-form-item label="用户名" required>
+                        <el-input v-model="form.login_username" placeholder="登录用户名" />
+                    </el-form-item>
+                    <el-form-item label="密码" required>
+                        <el-input v-model="form.login_password" type="password" placeholder="登录密码" />
+                    </el-form-item>
+                </div>
             </el-form>
             <template #footer>
                 <el-button @click="dialogVisible = false">取消</el-button>
@@ -137,7 +156,11 @@ const dialogVisible = ref(false)
 const form = reactive({
     task_name: '',
     target_url: '',
-    scan_type: 'quick',
+    scan_type: 'full',
+    auto_login: false,
+    login_url: '',
+    login_username: '',
+    login_password: ''
 })
 
 const createtask = () => {
@@ -145,11 +168,18 @@ const createtask = () => {
 }
 
 const submitTask = async () => {
-    const res = await request.post('/tasks/createtask', {
+    const postData = {
         task_name: form.task_name,
         target_url: form.target_url,
         scan_type: form.scan_type,
-    })
+        // 当启用自动登录时传递登录凭证
+        ...(form.auto_login && {
+            login_url: form.login_url,
+            login_username: form.login_username,
+            login_password: form.login_password
+        })
+    }
+    await request.post('/tasks/createtask', postData)
 
     ElMessage.success('任务创建成功')
     dialogVisible.value = false
@@ -157,7 +187,11 @@ const submitTask = async () => {
     Object.assign(form, {
         task_name: '',
         target_url: '',
-        scan_type: 'quick',
+        scan_type: 'full',
+        auto_login: false,
+        login_url: '',
+        login_username: '',
+        login_password: ''
     })
 }
 
@@ -172,6 +206,20 @@ const startScan = (task_id) => {
         type: 'warning',
     }).then(async () => {
         const res = await request.post('/tasks/start', {
+            task_id: task_id
+        })
+        ElMessage.success(res.data.message)
+        loadTasks()
+    }).catch(() => { })
+}
+
+const stopScan = (task_id) => {
+    ElMessageBox.confirm('确认停止扫描？', '警告', {
+        confirmButtonText: '确认',
+        cancelButtonText: '取消',
+        type: 'warning',
+    }).then(async () => {
+        const res = await request.post('/tasks/stop', {
             task_id: task_id
         })
         ElMessage.success(res.data.message)

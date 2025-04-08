@@ -119,7 +119,7 @@ const register = async () => {
         const res = response.data;
         if (response.status === 200) {
             ElMessage.success(res.message+',3秒后自动跳转登录页面');
-            setTimeout(() => { location.href = '/login'; }, 3000);
+            setTimeout(() => { location.replace('/login'); }, 3000);
         } else ElMessage.error(res.error.message);
     });
 };
