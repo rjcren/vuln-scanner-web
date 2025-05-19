@@ -9,7 +9,7 @@
                         </div>
                     </template>
                     <div>
-                        <ul class="list-group list-group-striped">
+                        <ul class="list-group">
                             <li class="list-group-item">
                                 <el-icon>
                                     <User />
@@ -197,7 +197,7 @@ onMounted(() => {
 
 <style scoped>
 .account {
-    margin: 50px;
+    margin: 20px;
 }
 
 .list-group {
@@ -230,4 +230,10 @@ svg {
     clear: both;
     height: 0;
 }
+
+.el-row {
+    margin-right: 0 !important;
+    margin-left: 0 !important;
+}
+
 </style>

@@ -96,7 +96,9 @@
         <el-timeline-item v-for="(alert, index) in latestAlerts" :key="index" :timestamp="formatTime(alert.time)"
           placement="top" :type="map[alert.severity]">
           <el-link type="primary" :underline="false" :href="alert.target_url" target="_blank">
-            <el-icon><Link /></el-icon>{{ alert.target_url }}&ensp;
+            <el-icon>
+              <Link />
+            </el-icon>{{ alert.target_url }}&ensp;
           </el-link>
           任务 {{ alert.task_name }}：{{ alert.description }}
         </el-timeline-item>
@@ -109,7 +111,6 @@
 <script setup>// setup语法糖，必备
 import { ref, onMounted } from 'vue'
 import * as echarts from 'echarts'
-import { ElMessage } from 'element-plus'
 import request from '@/utils/request'
 
 // 图表实例
@@ -127,7 +128,6 @@ const latestAlerts = ref([])
 const initCharts = () => {
   const taskChart = echarts.init(taskStatusChart.value)
   const severityChartInst = echarts.init(severityChart.value)
-
 
   // 获取数据
   Promise.all([
@@ -149,7 +149,8 @@ const initCharts = () => {
       critical: severityRes.data?.critical ?? 0,
       high: severityRes.data?.high ?? 0,
       medium: severityRes.data?.medium ?? 0,
-      low: severityRes.data?.low ?? 0
+      low: severityRes.data?.low ?? 0,
+      info: severityRes.data?.info ?? 0
     }
 
     const options = (datas) => ({
@@ -161,7 +162,7 @@ const initCharts = () => {
       series: [{
         type: 'pie',
         radius: ['40%', '70%'],
-        color: ['#f56c6c', '#e6a23c', '#67c23a', '#909399'],
+        color: ['#e57373', '#ffb74d', '#fff176', '#81c784', '#64b5f6'],
         data: datas.map(item => ({ value: item.value, name: item.name })),
         emphasis: {
           itemStyle: {
@@ -184,14 +185,14 @@ const initCharts = () => {
           }
         }
       }
-    })
+    });
 
     // 任务状态图表配置
     taskChart.setOption(options([
       { value: statusData.failed, name: '失败' },
       { value: statusData.running, name: '扫描中' },
-      { value: statusData.completed, name: '已完成' },
-      { value: statusData.pending, name: '等待中' }
+      { value: statusData.pending, name: '等待中' },
+      { value: statusData.completed, name: '已完成' }
     ]))
     // 漏洞严重程度配置
     severityChartInst.setOption(options([

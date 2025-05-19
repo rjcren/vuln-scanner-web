@@ -39,7 +39,6 @@
 
 <script setup>
 import { ref } from "vue";
-import router from '@/router/index.js'
 import request from '@/utils/request.js'
 import { ElMessage } from "element-plus";
 import bg from "@/assets/bg.png";

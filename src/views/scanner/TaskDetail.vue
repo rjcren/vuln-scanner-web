@@ -4,7 +4,7 @@
         <el-card class="info-card">
             <h2 class="task-title">
                 任务：{{ data.task_name }} &emsp;
-                <el-button type="success" :disabled="['running', 'completed'].includes(data.status)"
+                <el-button type="success" :disabled="data.status !== 'pending'"
                     @click="startScan">开始扫描</el-button>
                 <el-button type="warning" :disabled="data.status !== 'running'" @click="stopScan">停止扫描</el-button>
                 <el-button type="primary" :disabled="data.status !== 'completed'"
@@ -429,7 +429,7 @@ onUnmounted(() => {
 }
 
 .el-timeline {
-    max-height: 600px;
+    max-height: 100%;
     overflow-y: auto;
 }
 

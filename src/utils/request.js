@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { ElMessage } from 'element-plus';
+import { showMessage } from '@/utils/message';
 import { logout } from '@/utils/user'
 
 const request = axios.create({
@@ -13,7 +13,7 @@ let loadingRequestCount = 0;
 const showLoading = (config) => {
     config.loadingTimer = setTimeout(() => {
         if (loadingRequestCount === 0)
-            ElMessage.warning('请求处理中...');
+            showMessage('warning', '请求处理中...');
         loadingRequestCount++;
     }, 2000);
 };
@@ -50,13 +50,13 @@ request.interceptors.response.use(res => {
 }, error => {
     console.log(error);
     clearLoading(error.config);
-    if (!error.response) ElMessage.error('无法连接服务器，请检查网络或联系管理员');
-    else if (error.response.status === 404) ElMessage.error('未找到请求接口！');
+    if (!error.response) showMessage('error', '无法连接服务器，请检查网络或联系管理员');
+    else if (error.response.status === 404) showMessage('error', '未找到请求接口！');
     else if (error.response.status === 401) {
-        ElMessage.error(error.response.data.error.message + '，2秒后返回登录页面');
+        showMessage('error', error.response.data.error.message + '，2秒后返回登录页面');
         logout();
     } else {
-        ElMessage.error(error.response.data?.error?.message || '服务器错误');
+        showMessage('error', error.response.data?.error?.message || '服务器错误');
         console.log(error.response.data.error?.message);
     }
     return Promise.reject(error);

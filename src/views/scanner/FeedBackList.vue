@@ -32,12 +32,13 @@
     </el-card>
 
     <!-- 查看详情对话框 -->
-    <el-dialog :visible.sync="dialogVisible" title="反馈详情" width="50%">
+    <el-dialog v-model="dialogVisible" title="反馈详情" width="50%">
       <div v-if="selectedFeedback">
         <p><strong>反馈ID：</strong>{{ selectedFeedback.feedback_id }}</p>
         <p><strong>反馈用户：</strong>{{ selectedFeedback.username }}</p>
         <p><strong>关联任务：</strong>{{ selectedFeedback.task_name }}</p>
         <p><strong>反馈内容：</strong>{{ selectedFeedback.description }}</p>
+        <p><strong>反馈回执：</strong>{{ selectedFeedback.receipt }}</p>
         <p><strong>状态：</strong>{{ statusMap[selectedFeedback.status]?.label || '未知' }}</p>
         <p><strong>创建时间：</strong>{{ selectedFeedback.created_at }}</p>
       </div>
@@ -47,11 +48,8 @@
     </el-dialog>
 
     <!-- 发送回执对话框 -->
-    <el-dialog :visible.sync="receiptDialogVisible" title="发送反馈回执" width="50%">
+    <el-dialog v-model="receiptDialogVisible" title="发送反馈回执" width="50%">
       <el-form :model="receiptForm" label-width="80px">
-        <el-form-item label="收件人">
-          <el-input v-model="receiptForm.email" disabled />
-        </el-form-item>
         <el-form-item label="回执内容">
           <el-input type="textarea" v-model="receiptForm.message" placeholder="请输入回执内容" />
         </el-form-item>
@@ -117,20 +115,19 @@ const deleteFeedback = async (feedbackId) => {
     await request.delete(`/feedback/${feedbackId}`);
     ElMessage.success("反馈已删除");
     loadFeedbackList();
-  } catch (error) {
-    ElMessage.error("删除反馈失败");
-  }
+  } catch (error) {}
 };
 
-const openReceiptDialog = () => {
+const openReceiptDialog = (feedback) => {
+  selectedFeedback.value = feedback;
   receiptForm.value.message = "";
   receiptDialogVisible.value = true;
 };
 
 const sendReceipt = async () => {
   try {
-    await request.post("/feedback/receipt", {
-      message: receiptForm.value.message,
+    await request.post(`/feedback/${selectedFeedback.value.feedback_id}/receipt`, {
+      message: receiptForm.value.message
     });
     ElMessage.success("回执已发送");
     receiptDialogVisible.value = false;

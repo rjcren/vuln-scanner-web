@@ -29,7 +29,7 @@
 </template>
 
 <script setup>
-import { ref, nextTick } from "vue";
+import { ref } from "vue";
 import router from '@/router/index.js'
 import request from '@/utils/request.js'
 import { ElMessage } from "element-plus";
@@ -65,8 +65,13 @@ const login = async () => {
     request.post('/auth/login', loginForm.value).then(response => {
         const res = response.data;
         if (response.status === 200) {
-            ElMessage.success(res.message + '，2秒后自动跳转首页');
-            setTimeout(() => { router.push('/manager/home'); }, 2000);
+            ElMessage.success(res.message + '，2秒后自动跳转');
+            console.log(typeof res.force_reset);
+            if (res.force_reset) {
+                setTimeout(() => { router.push('/force-reset'); }, 2000);
+            } else {
+                setTimeout(() => { router.push('/manager/home'); }, 2000);
+            }
         } else {
             ElMessage.error(res.error.message);
             return;
