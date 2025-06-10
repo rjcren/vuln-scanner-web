@@ -113,7 +113,6 @@ onMounted(async () => {
     role.value = res.role === 'admin' ? '管理员' : '普通用户'
 
   } catch (error) {
-    ElMessage.error('获取用户信息失败')
     userName.value = '用户'
   }
 })

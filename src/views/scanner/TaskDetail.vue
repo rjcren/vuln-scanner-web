@@ -4,8 +4,7 @@
         <el-card class="info-card">
             <h2 class="task-title">
                 任务：{{ data.task_name }} &emsp;
-                <el-button type="success" :disabled="data.status !== 'pending'"
-                    @click="startScan">开始扫描</el-button>
+                <el-button type="success" :disabled="data.status !== 'pending'" @click="startScan">开始扫描</el-button>
                 <el-button type="warning" :disabled="data.status !== 'running'" @click="stopScan">停止扫描</el-button>
                 <el-button type="primary" :disabled="data.status !== 'completed'"
                     @click="generateReport">下载报告</el-button>
@@ -21,7 +20,7 @@
                     <div class="info-item">
                         <span class="label">扫描状态：</span>
                         <el-tag :type="statusMap[data.status]?.[0] || 'info'">{{ statusMap[data.status]?.[1] || '未知'
-                            }}</el-tag>
+                        }}</el-tag>
                     </div>
                     <div class="info-item">
                         <span class="label">目标URL：</span>
@@ -76,8 +75,8 @@
                 </template>
                 <el-timeline v-if="data.task_logs.length">
                     <el-timeline-item v-for="(log, index) in data.task_logs" :key="index"
-                        :timestamp="formatTime(log.timestamp)" placement="top">
-                        <span :style="{ color: statusMap[log.log_level] }">{{ log.log_message }}</span>
+                        :timestamp="formatTime(log.time)" placement="top">
+                        <span :style="{ color: statusMap[log.level] }">{{ log.message }}</span>
                     </el-timeline-item>
                 </el-timeline>
                 <el-empty v-else description="暂无日志记录" />
@@ -97,12 +96,13 @@
                     </el-table-column>
 
                     <el-table-column prop="severity" label="严重等级" width="160" align="center" :filters="[
-                        { text: 'CRITICAL', value: 'critical' },
-                        { text: 'HIGH', value: 'high' },
-                        { text: 'MEDIUM', value: 'medium' },
-                        { text: 'LOW', value: 'low' },
-                        { text: 'INFO', value: 'info' }
-                    ]" :filter-method="filterSeverity" sortable>
+                        { text: '严重', value: 'critical' },
+                        { text: '高危', value: 'high' },
+                        { text: '中危', value: 'medium' },
+                        { text: '低危', value: 'low' },
+                        { text: '信息', value: 'info' }
+                    ]" :filter-method="filterSeverity" :sortable="true"
+                        :sort-method="(a, b) => severityMap[a.severity][2] - severityMap[b.severity][2]">
                         <template #default="{ row }">
                             <el-tag :style="{ backgroundColor: severityMap[row.severity][0], border: 'none' }"
                                 effect="dark">
@@ -111,11 +111,11 @@
                         </template>
                     </el-table-column>
 
-                    <el-table-column prop="severity" label="漏洞来源" width="200" align="center"
-                        :filters="[{ text: 'AWVS', value: 'AWVS' }]" :filter-method="filterSource" sortable>
+                    <el-table-column prop="scan_source" label="漏洞来源" width="200" align="center" :filters="sourceFilters"
+                        :filter-method="filterSource" sortable>
                         <template #default="{ row }">
-                            <el-tag :type="'info'">
-                                {{ row.scan_source.toUpperCase() }}
+                            <el-tag type="info">
+                                {{ row.scan_source ? row.scan_source.toUpperCase() : '未知' }}
                             </el-tag>
                         </template>
                     </el-table-column>
@@ -165,11 +165,10 @@
 </template>
 
 <script setup>
-import { reactive, onMounted, ref, computed, onUnmounted } from "vue";
+import { reactive, onMounted, ref, computed, onUnmounted, watch } from "vue";
 import { Search } from "@element-plus/icons-vue";
 import request from "@/utils/request";
 import { ElMessage, ElMessageBox } from "element-plus";
-import router from "@/router";
 import { useRoute } from "vue-router";
 
 const data = reactive({
@@ -194,6 +193,7 @@ const loadTaskDetail = async () => {
     try {
         const id = data.task_id || useRoute().params.id;
         const res = await request.get(`/tasks/${id}`);
+        console.log(res.data)
         Object.assign(data, res.data)
 
         pollingTaskDetail()
@@ -282,16 +282,35 @@ const statusMap = {
 }
 
 const formatTime = (timestamp) => {
-    return new Date(timestamp).toLocaleString()
+    if (!timestamp) return '-'
+    // 如果没有时区，手动加上 'Z' 让其按 UTC 解析
+    let date
+    if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/.test(timestamp)) {
+        date = new Date(timestamp + 'Z') // 按 UTC 解析
+        // 转为本地时间字符串
+        return date.toLocaleString('zh-CN', { hour12: false })
+    }
+    // 其它情况直接用 Date 解析
+    date = new Date(timestamp)
+    if (isNaN(date.getTime())) return '-'
+    return date.toLocaleString('zh-CN', { hour12: false })
 }
 
 const severityMap = {
-    critical: ['#8A3A3F', '严重'],
-    high: ['#D94F4F', '高危'],
-    medium: ['#D6603D', '中危'],
-    low: ['#C07535', '低危'],
-    info: ['#505997', '信息']
+    critical: ['#8A3A3F', '严重', 1],
+    high: ['#D94F4F', '高危', 2],
+    medium: ['#D6603D', '中危', 3],
+    low: ['#C07535', '低危', 4],
+    info: ['#505997', '信息', 5]
 }
+
+const sourceFilters = computed(() => {
+    const sources = Array.from(new Set(data.vulnerabilities.map(v => v.scan_source)));
+    return sources.map(src => ({
+        text: src ? src.toUpperCase() : '未知',
+        value: src
+    }));
+});
 
 const truncateDescription = (desc) => {
     if (!desc) return '-'
@@ -323,28 +342,28 @@ const showDetail = (vuln) => {
 // 用户反馈
 const showFeedbackDialog = ref(false);
 const feedbackForm = ref({
-  task_id: data.task_id,
-  description: "",
+    task_id: data.task_id,
+    description: "",
 });
 
 const openFeedbackDialog = () => {
-  feedbackForm.value.description = "";
-  showFeedbackDialog.value = true;
+    feedbackForm.value.description = "";
+    showFeedbackDialog.value = true;
 };
 
 const submitFeedback = async () => {
-  try {
-    feedbackForm.value.task_id = data.task_id;
-    if (!feedbackForm.value.description) {
-      ElMessage.error("反馈内容不能为空");
-      return;
+    try {
+        feedbackForm.value.task_id = data.task_id;
+        if (!feedbackForm.value.description) {
+            ElMessage.error("反馈内容不能为空");
+            return;
+        }
+        await request.post("/feedback", feedbackForm.value);
+        ElMessage.success("反馈提交成功");
+        showFeedbackDialog.value = false;
+    } catch (error) {
+        ElMessage.error("反馈提交失败");
     }
-    await request.post("/feedback", feedbackForm.value);
-    ElMessage.success("反馈提交成功");
-    showFeedbackDialog.value = false;
-  } catch (error) {
-    ElMessage.error("反馈提交失败");
-  }
 };
 
 const filterSeverity = (value, row) => {
@@ -354,6 +373,14 @@ const filterSeverity = (value, row) => {
 const filterSource = (value, row) => {
     return row.scan_source === value;
 };
+
+const route = useRoute();
+watch(() => route.params.id, (newId, oldId) => {
+    if (newId !== oldId) {
+        data.task_id = newId
+        loadTaskDetail()
+    }
+})
 
 onMounted(() => {
     loadTaskDetail()

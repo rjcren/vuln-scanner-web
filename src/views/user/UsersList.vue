@@ -42,7 +42,7 @@
 
         <!-- 添加用户对话框 -->
         <el-dialog v-model="dialogVisible" title="新增用户" width="30%">
-            <el-form :model="addForm" :rules="rules" ref="addFormRef">
+            <el-form :model="addForm" :rules="rules" ref="addFormRef" label-width="80px">
                 <el-form-item label="邮箱" prop="email">
                     <el-input v-model="addForm.email" placeholder="请输入邮箱" />
                 </el-form-item>
@@ -66,7 +66,7 @@
         </el-dialog>
 
         <el-dialog v-model="editDialogVisible" title="修改用户信息" width="30%">
-            <el-form :model="editForm" :rules="rules" ref="editFormRef">
+            <el-form :model="editForm" :rules="rules" ref="editFormRef" label-width="80px">
                 <el-form-item style="display: none;" label="">
                     <el-input v-model="editForm.user_id"></el-input>
                 </el-form-item>
@@ -217,7 +217,7 @@ const handleEdit = (row) => {
 
 const handleEditSubmit = async () => {
     try {
-        await request.put(`/auth/admin-change-info`, editForm.value)
+        await request.post(`/auth/admin-change-info`, editForm.value)
         ElMessage.success('用户信息修改成功')
         editDialogVisible.value = false
         loadUsers()
